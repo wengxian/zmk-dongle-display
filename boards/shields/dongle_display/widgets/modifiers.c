@@ -116,9 +116,9 @@ static void set_modifiers(lv_obj_t *widget, struct modifiers_state state) {
     uint8_t index = zmk_keymap_highest_layer_active();
 
     if (index == 1) {
-        strcpy(current_modifier_symbols, mac_modifier_symbols);
+        memcpy(current_modifier_symbols, mac_modifier_symbols);
     } else {
-        strcpy(current_modifier_symbols, win_modifier_symbols);
+        memcpy(current_modifier_symbols, win_modifier_symbols);
     }
     for (int i = 0; i < NUM_SYMBOLS; i++) {
         bool mod_is_active = state.modifiers & current_modifier_symbols[i]->modifier;
