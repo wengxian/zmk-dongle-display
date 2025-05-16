@@ -85,13 +85,8 @@ struct modifier_symbol *mac_modifier_symbols[] = {
     &ms_shift
 };
 
-struct modifier_symbol *current_modifier_symbols[] = {
-    // this order determines the order of the symbols
-    &ms_win,
-    &ms_alt,
-    &ms_control,
-    &ms_shift
-};
+current_modifier_symbols = win_modifier_symbols;
+struct modifier_symbol **current_modifier_symbols;
 
 #define NUM_SYMBOLS (sizeof(current_modifier_symbols) / sizeof(struct modifier_symbol *))
 
