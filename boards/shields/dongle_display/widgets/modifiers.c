@@ -13,6 +13,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/display.h>
 #include <zmk/event_manager.h>
 #include <zmk/events/keycode_state_changed.h>
+#include <zmk/events/layer_state_changed.h>
 #include <zmk/hid.h>
 #include <dt-bindings/zmk/modifiers.h>
 
@@ -30,6 +31,30 @@ struct modifier_symbol {
     bool is_active;
 };
 
+LV_IMG_DECLARE(cmd_icon);
+struct modifier_symbol ms_cmd = {
+    .modifier = MOD_LGUI | MOD_RGUI,
+    .symbol_dsc = &cmd_icon,
+};
+
+LV_IMG_DECLARE(opt_icon);
+struct modifier_symbol ms_opt = {
+    .modifier = MOD_LALT | MOD_RALT,
+    .symbol_dsc = &opt_icon,
+};
+
+LV_IMG_DECLARE(win_icon);
+struct modifier_symbol ms_win = {
+    .modifier = MOD_LGUI | MOD_RGUI,
+    .symbol_dsc = &win_icon,
+};
+
+LV_IMG_DECLARE(alt_icon);
+struct modifier_symbol ms_alt = {
+    .modifier = MOD_LALT | MOD_RALT,
+    .symbol_dsc = &alt_icon,
+};
+
 LV_IMG_DECLARE(control_icon);
 struct modifier_symbol ms_control = {
     .modifier = MOD_LCTL | MOD_RCTL,
@@ -42,49 +67,31 @@ struct modifier_symbol ms_shift = {
     .symbol_dsc = &shift_icon,
 };
 
-#if IS_ENABLED(CONFIG_ZMK_DONGLE_DISPLAY_MAC_MODIFIERS)
-LV_IMG_DECLARE(opt_icon);
-struct modifier_symbol ms_opt = {
-    .modifier = MOD_LALT | MOD_RALT,
-    .symbol_dsc = &opt_icon,
-};
-
-LV_IMG_DECLARE(cmd_icon);
-struct modifier_symbol ms_cmd = {
-    .modifier = MOD_LGUI | MOD_RGUI,
-    .symbol_dsc = &cmd_icon,
-};
-
-struct modifier_symbol *modifier_symbols[] = {
-    // this order determines the order of the symbols
-    &ms_control,
-    &ms_opt,
-    &ms_cmd,
-    &ms_shift
-};
-#else
-LV_IMG_DECLARE(alt_icon);
-struct modifier_symbol ms_alt = {
-    .modifier = MOD_LALT | MOD_RALT,
-    .symbol_dsc = &alt_icon,
-};
-
-LV_IMG_DECLARE(win_icon);
-struct modifier_symbol ms_win = {
-    .modifier = MOD_LGUI | MOD_RGUI,
-    .symbol_dsc = &win_icon,
-};
-
-struct modifier_symbol *modifier_symbols[] = {
+struct modifier_symbol *win_modifier_symbols[] = {
     // this order determines the order of the symbols
     &ms_win,
     &ms_alt,
     &ms_control,
     &ms_shift
 };
-#endif
 
-#define NUM_SYMBOLS (sizeof(modifier_symbols) / sizeof(struct modifier_symbol *))
+struct modifier_symbol *mac_modifier_symbols[] = {
+    // this order determines the order of the symbols
+    &ms_cmd,
+    &ms_opt,
+    &ms_control,
+    &ms_shift
+};
+
+struct modifier_symbol *current_modifier_symbols[] = {
+    // this order determines the order of the symbols
+    &ms_win,
+    &ms_alt,
+    &ms_control,
+    &ms_shift
+};
+
+#define NUM_SYMBOLS (sizeof(current_modifier_symbols) / sizeof(struct modifier_symbol *))
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -104,17 +111,24 @@ static void move_object_y(void *obj, int32_t from, int32_t to) {
 }
 
 static void set_modifiers(lv_obj_t *widget, struct modifiers_state state) {
-    for (int i = 0; i < NUM_SYMBOLS; i++) {
-        bool mod_is_active = state.modifiers & modifier_symbols[i]->modifier;
+    uint8_t index = zmk_keymap_highest_layer_active();
 
-        if (mod_is_active && !modifier_symbols[i]->is_active) {
-            move_object_y(modifier_symbols[i]->symbol, 1, 0);
-            move_object_y(modifier_symbols[i]->selection_line, SIZE_SYMBOLS + 4, SIZE_SYMBOLS + 2);
-            modifier_symbols[i]->is_active = true;
-        } else if (!mod_is_active && modifier_symbols[i]->is_active) {
-            move_object_y(modifier_symbols[i]->symbol, 0, 1);
-            move_object_y(modifier_symbols[i]->selection_line, SIZE_SYMBOLS + 2, SIZE_SYMBOLS + 4);
-            modifier_symbols[i]->is_active = false;
+    if (index == 1) {
+        current_modifier_symbols = mac_modifier_symbols;
+    } else {
+        current_modifier_symbols = win_modifier_symbols;
+    }
+    for (int i = 0; i < NUM_SYMBOLS; i++) {
+        bool mod_is_active = state.modifiers & current_modifier_symbols[i]->modifier;
+
+        if (mod_is_active && !current_modifier_symbols[i]->is_active) {
+            move_object_y(current_modifier_symbols[i]->symbol, 1, 0);
+            move_object_y(current_modifier_symbols[i]->selection_line, SIZE_SYMBOLS + 4, SIZE_SYMBOLS + 2);
+            current_modifier_symbols[i]->is_active = true;
+        } else if (!mod_is_active && current_modifier_symbols[i]->is_active) {
+            move_object_y(current_modifier_symbols[i]->symbol, 0, 1);
+            move_object_y(current_modifier_symbols[i]->selection_line, SIZE_SYMBOLS + 2, SIZE_SYMBOLS + 4);
+            current_modifier_symbols[i]->is_active = false;
         }
     }
 }
@@ -147,14 +161,14 @@ int zmk_widget_modifiers_init(struct zmk_widget_modifiers *widget, lv_obj_t *par
     static const lv_point_t selection_line_points[] = { {0, 0}, {SIZE_SYMBOLS, 0} };
 
     for (int i = 0; i < NUM_SYMBOLS; i++) {
-        modifier_symbols[i]->symbol = lv_img_create(widget->obj);
-        lv_obj_align(modifier_symbols[i]->symbol, LV_ALIGN_TOP_LEFT, 1 + (SIZE_SYMBOLS + 1) * i, 1);
-        lv_img_set_src(modifier_symbols[i]->symbol, modifier_symbols[i]->symbol_dsc);
+        current_modifier_symbols[i]->symbol = lv_img_create(widget->obj);
+        lv_obj_align(current_modifier_symbols[i]->symbol, LV_ALIGN_TOP_LEFT, 1 + (SIZE_SYMBOLS + 1) * i, 1);
+        lv_img_set_src(current_modifier_symbols[i]->symbol, current_modifier_symbols[i]->symbol_dsc);
 
-        modifier_symbols[i]->selection_line = lv_line_create(widget->obj);
-        lv_line_set_points(modifier_symbols[i]->selection_line, selection_line_points, 2);
-        lv_obj_add_style(modifier_symbols[i]->selection_line, &style_line, 0);
-        lv_obj_align_to(modifier_symbols[i]->selection_line, modifier_symbols[i]->symbol, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 3);
+        current_modifier_symbols[i]->selection_line = lv_line_create(widget->obj);
+        lv_line_set_points(current_modifier_symbols[i]->selection_line, selection_line_points, 2);
+        lv_obj_add_style(current_modifier_symbols[i]->selection_line, &style_line, 0);
+        lv_obj_align_to(current_modifier_symbols[i]->selection_line, current_modifier_symbols[i]->symbol, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 3);
     }
 
     sys_slist_append(&widgets, &widget->node);
