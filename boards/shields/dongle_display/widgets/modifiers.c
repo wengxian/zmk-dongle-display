@@ -85,9 +85,9 @@ struct modifier_symbol *mac_modifier_symbols[] = {
     &ms_shift
 };
 
-struct modifier_symbol **current_modifier_symbols = win_modifier_symbols;
+struct modifier_symbol **current_modifier_symbols = NULL;
 
-#define NUM_SYMBOLS (sizeof(current_modifier_symbols) / sizeof(struct modifier_symbol *))
+#define NUM_SYMBOLS (sizeof(win_modifier_symbols) / sizeof(struct modifier_symbol *))
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -107,6 +107,7 @@ static void move_object_y(void *obj, int32_t from, int32_t to) {
 }
 
 static void set_modifiers(lv_obj_t *widget, struct modifiers_state state) {
+    
     uint8_t index = zmk_keymap_highest_layer_active();
 
     if (index == 1) {
