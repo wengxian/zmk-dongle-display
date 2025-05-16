@@ -159,14 +159,14 @@ int zmk_widget_modifiers_init(struct zmk_widget_modifiers *widget, lv_obj_t *par
     static const lv_point_t selection_line_points[] = { {0, 0}, {SIZE_SYMBOLS, 0} };
 
     for (int i = 0; i < NUM_SYMBOLS; i++) {
-        current_modifier_symbols[i]->symbol = lv_img_create(widget->obj);
-        lv_obj_align(current_modifier_symbols[i]->symbol, LV_ALIGN_TOP_LEFT, 1 + (SIZE_SYMBOLS + 1) * i, 1);
-        lv_img_set_src(current_modifier_symbols[i]->symbol, current_modifier_symbols[i]->symbol_dsc);
+        win_modifier_symbols[i]->symbol = lv_img_create(widget->obj);
+        lv_obj_align(win_modifier_symbols[i]->symbol, LV_ALIGN_TOP_LEFT, 1 + (SIZE_SYMBOLS + 1) * i, 1);
+        lv_img_set_src(win_modifier_symbols[i]->symbol, win_modifier_symbols[i]->symbol_dsc);
 
-        current_modifier_symbols[i]->selection_line = lv_line_create(widget->obj);
-        lv_line_set_points(current_modifier_symbols[i]->selection_line, selection_line_points, 2);
-        lv_obj_add_style(current_modifier_symbols[i]->selection_line, &style_line, 0);
-        lv_obj_align_to(current_modifier_symbols[i]->selection_line, current_modifier_symbols[i]->symbol, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 3);
+        win_modifier_symbols[i]->selection_line = lv_line_create(widget->obj);
+        lv_line_set_points(win_modifier_symbols[i]->selection_line, selection_line_points, 2);
+        lv_obj_add_style(win_modifier_symbols[i]->selection_line, &style_line, 0);
+        lv_obj_align_to(win_modifier_symbols[i]->selection_line, win_modifier_symbols[i]->symbol, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 3);
     }
 
     sys_slist_append(&widgets, &widget->node);
