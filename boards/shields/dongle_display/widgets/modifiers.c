@@ -16,6 +16,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/events/layer_state_changed.h>
 #include <zmk/display/widgets/layer_status.h>
 #include <zmk/hid.h>
+#include <zmk/keymap.h>
 #include <dt-bindings/zmk/modifiers.h>
 
 #include "modifiers.h"
